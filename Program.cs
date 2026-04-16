@@ -87,6 +87,15 @@ try
 
             var createdKeys = new List<string>();
 
+            // Resolve folder once per suite
+            int? folderId = null;
+            if (!migrationConfig.DryRun)
+            {
+                var suiteConfig = migrationConfig.TestSuites.FirstOrDefault(sc => sc.Id == suite.Id);
+                var folderName = !string.IsNullOrWhiteSpace(suiteConfig?.FolderName) ? suiteConfig.FolderName : suite.Name;
+                folderId = await aioService.GetOrCreateFolderAsync(SanitizeFolderName(folderName));
+            }
+
             foreach (var tc in testCases)
             {
                 Console.WriteLine($"   │  · [{tc.Id}] {tc.Title} ({tc.Steps.Count} step(s))");
@@ -94,9 +103,7 @@ try
                 if (migrationConfig.DryRun) continue;
 
                 // 5. Map and push to AIO Tests
-                var suiteConfig = migrationConfig.TestSuites.FirstOrDefault(sc => sc.Id == suite.Id);
-                var folderName = !string.IsNullOrWhiteSpace(suiteConfig?.FolderName) ? suiteConfig.FolderName : suite.Name;
-                var aioRequest = MapToAioTestCase(tc, folderName);
+                var aioRequest = MapToAioTestCase(tc, folderId);
                 var key = await aioService.CreateTestCaseAsync(aioRequest);
 
                 if (key != null)
@@ -152,12 +159,12 @@ else
 Console.WriteLine("\nDone.");
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-static AioCreateTestCaseRequest MapToAioTestCase(AdoTestCase tc, string suiteName)
+static AioCreateTestCaseRequest MapToAioTestCase(AdoTestCase tc, int? folderId)
 {
     return new AioCreateTestCaseRequest
     {
         Title = tc.Title,
-        Folder = new AioFolder { Name = SanitizeFolderName(suiteName) },
+        Folder = folderId.HasValue ? new AioFolder { Id = folderId.Value } : null,
         Description = tc.Description,
         Priority = new AioPriority { Name = MapPriority(tc.Priority) },
         Status = new AioCaseStatus { Name = "Published" },

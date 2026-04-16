@@ -28,6 +28,27 @@ public class AioService
         _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }
 
+    /// <summary>Creates or retrieves a folder by path and returns its numeric ID.</summary>
+    public async Task<int?> GetOrCreateFolderAsync(string folderPath)
+    {
+        var url = $"{AioBaseUrl}/project/{_config.ProjectKey}/testcase/folder/hierarchy";
+        var body = JsonSerializer.Serialize(new AioCreateFolderHierarchyRequest { FolderHierarchy = [folderPath] }, JsonOptions);
+        var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+        var response = await _client.PutAsync(url, content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"  [ERROR] Failed to create/get folder '{folderPath}': {response.StatusCode} — {error}");
+            return null;
+        }
+
+        var json = await response.Content.ReadAsStringAsync();
+        var details = JsonSerializer.Deserialize<AioFolderDetails>(json, JsonOptions);
+        return details?.Id;
+    }
+
     /// <summary>Creates a test case in AIO Tests and returns its key (e.g. "PAIO-TC-1").</summary>
     public async Task<string?> CreateTestCaseAsync(AioCreateTestCaseRequest request)
     {

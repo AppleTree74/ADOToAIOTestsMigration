@@ -29,6 +29,28 @@ public class MigrationConfig
 
 // --- Requests ---
 
+public class AioFolder
+{
+    [System.Text.Json.Serialization.JsonPropertyName("ID")]
+    public int Id { get; set; }
+}
+
+public class AioCreateFolderHierarchyRequest
+{
+    /// <summary>List of folder names representing the hierarchy (e.g. ["Parent", "Child"]).</summary>
+    public List<string> FolderHierarchy { get; set; } = new();
+
+    /// <summary>ID of the base folder. Null = create from top level.</summary>
+    public int? BaseFolderId { get; set; }
+}
+
+public class AioFolderDetails
+{
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public string? FolderPath { get; set; }
+}
+
 public class AioCreateTestCaseRequest
 {
     public string Title { get; set; } = "";
@@ -48,11 +70,6 @@ public class AioCaseStatus
 public class AioScriptType
 {
     public string Name { get; set; } = "Classic";
-}
-
-public class AioFolder
-{
-    public string Name { get; set; } = "";
 }
 
 public class AioPriority
